@@ -19,7 +19,7 @@ class Portfolio {
     this.transactions = _.orderBy(transactions, 'date', ['asc']);
     this.stocks = {};
     for (const transaction of transactions) {
-      const { stockId, start } = transaction;
+      const { stockId } = transaction;
       if (!this.stocks[stockId]) {
         this.stocks[stockId] = new Stock(stockId);
       }
@@ -34,9 +34,9 @@ class Portfolio {
     return from;
   };
 
-  // addTransaction(date, stockId, amount) {
-  //   const nextStockTransaction = this.transactions.find();
-  // }
+  addTransaction(date, stockId, quantity) {
+    const nextStockTransaction = this.transactions.find();
+  }
 
   init = async () => {
     const queue = new TaskQueue(Promise, 20); // 20 concurrent requests
@@ -62,20 +62,14 @@ class Portfolio {
     const stocksPrice = await this.stocksPriceByDate(dates);
     const history = await dates.map(date => ({
       date,
-      value: portfolioUtils.valueFromAmountAndPrices(date, this.stocksToDate(date), stocksPrice)
+      value: portfolioUtils.getStocksValue(date, this.stocksToDate(date), stocksPrice)
     }));
     return history;
   };
 
   stocksToDate = date => {
-    const stocks = {};
     const transactions = this.transactions.filter(t => isSameDayOrBefore(t.date, date));
-    for (const transaction of transactions) {
-      const { stockId, end } = transaction;
-      stocks[stockId] = end;
-    }
-
-    return stocks;
+    return portfolioUtils.getStockQuantities(transactions);
   };
 
   stocksPriceByDate = async dates => {
@@ -104,16 +98,13 @@ class Portfolio {
       transactionDates.push(from);
     }
     transactionDates.push(to);
-
     const stockPrices = await this.stocksPriceByDate(_.uniq(transactionDates));
-
-    const returnRate = portfolioUtils.timeWeightedReturnRate(
+    const returnRate = portfolioUtils.getTimeWeightedReturnRate(
       transactionsInRange,
       stockPrices,
       {
         date: from,
-        stockAmounts: from ? this.stocksToDate(from) : undefined,
-        previousStockAmounts: from ? this.stocksToDate(subDays(from, 1)) : undefined
+        previousStockQuantities: from ? this.stocksToDate(subDays(from, 1)) : undefined
       },
       {
         date: to
