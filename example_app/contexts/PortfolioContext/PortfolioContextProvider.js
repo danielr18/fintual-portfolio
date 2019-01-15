@@ -1,6 +1,6 @@
 import React from 'react';
 import PortfolioContext from './PortfolioContext';
-import Portfolio from '../../models/Portfolio';
+import { Portfolio } from '../../..';
 
 class PortfolioContextProvider extends React.Component {
   constructor(props) {
@@ -9,13 +9,13 @@ class PortfolioContextProvider extends React.Component {
       { stockId: '186', quantity: 1, date: '2018-05-05' },
       { stockId: '187', quantity: 2, date: '2018-06-05' },
       { stockId: '188', quantity: 3, date: '2018-07-05' },
-      { stockId: '258', quantity: 4, date: '2018-08-05' },
+      { stockId: '258', quantity: 4, date: '2018-08-05' }
     ]);
   }
 
   async componentDidMount() {
     this.portfolio.subscribe(this.onPortfolioChange);
-    await this.portfolio.init()
+    await this.portfolio.init();
   }
 
   componentWillUnmount() {
@@ -29,7 +29,9 @@ class PortfolioContextProvider extends React.Component {
   render() {
     return (
       // Use literal object to force context updates
-      <PortfolioContext.Provider value={{ lastUpdate: new Date().getTime(), portfolio: this.portfolio }}>
+      <PortfolioContext.Provider
+        value={{ lastUpdate: new Date().getTime(), portfolio: this.portfolio }}
+      >
         {this.props.children}
       </PortfolioContext.Provider>
     );

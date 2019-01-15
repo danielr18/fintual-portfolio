@@ -2,20 +2,12 @@ import React from 'react';
 import _ from 'lodash';
 import Highcharts from 'highcharts/highstock';
 import HighchartsReact from 'highcharts-react-official';
-import { Header } from 'semantic-ui-react';
-import {
-  startOfYear,
-  eachDay,
-  addDays,
-  differenceInDays,
-  isAfter,
-  format as dateFormat
-} from 'date-fns';
+import { Header, Placeholder } from 'semantic-ui-react';
+import { startOfYear, subDays, addDays, eachDay, isAfter, differenceInDays } from 'date-fns';
 import PortfolioContext from '../../../contexts/PortfolioContext/PortfolioContext';
 import PlaceholderChart from './PlaceholderChart';
-import { isSameDayOrBefore } from '../../../utils/date';
 
-class ProfitChart extends React.Component {
+class ValueChart extends React.Component {
   static contextType = PortfolioContext;
 
   constructor(props, context) {
@@ -33,8 +25,19 @@ class ProfitChart extends React.Component {
     if (this.portfolio.isInited()) {
       this.updateChart();
       this.setState({
-        profit: await this.portfolio.profitOnPeriod(...this.periodDates()),
-        annualizedProfit: await this.portfolio.annualizedProfitOnPeriod(...this.periodDates())
+        growth: await this.portfolio.growthOnPeriod(...this.periodDates()),
+        annualizedGrowth: await this.portfolio.annualizedGrowthOnPeriod(...this.periodDates())
+      });
+    }
+  }
+
+  async componentDidUpdate() {
+    if (this._lastPortfolioUpdate !== this.context.lastUpdate && this.portfolio.isInited()) {
+      this._lastPortfolioUpdate = this.context.lastUpdate;
+      this.updateChart();
+      this.setState({
+        growth: await this.portfolio.growthOnPeriod(...this.periodDates()),
+        annualizedGrowth: await this.portfolio.annualizedGrowthOnPeriod(...this.periodDates())
       });
     }
   }
@@ -50,36 +53,25 @@ class ProfitChart extends React.Component {
     return this.defaultPeriodDates();
   };
 
-  async componentDidUpdate() {
-    if (this._lastPortfolioUpdate !== this.context.lastUpdate && this.portfolio.isInited()) {
-      this._lastPortfolioUpdate = this.context.lastUpdate;
-      this.updateChart();
-      this.setState({
-        profit: await this.portfolio.profitOnPeriod(...this.periodDates()),
-        annualizedProfit: await this.portfolio.annualizedProfitOnPeriod(...this.periodDates())
-      });
-    }
-  }
-
   updatePeriodDates = async e => {
     this.setState({
       startDate: e.min,
       endDate: e.max,
-      profit: await this.portfolio.profitOnPeriod(e.min, e.max),
-      annualizedProfit: await this.portfolio.annualizedProfitOnPeriod(e.min, e.max)
+      growth: await this.portfolio.growthOnPeriod(e.min, e.max),
+      annualizedGrowth: await this.portfolio.annualizedGrowthOnPeriod(e.min, e.max)
     });
   };
 
-  profitHistory = async (from, to) => {
+  valueHistory = async (from, to) => {
     const firstDate = this.portfolio.firstDate();
     let adjustedFrom = from;
     const history = [];
 
     if (isAfter(firstDate, from)) {
-      eachDay(from, firstDate).forEach(date => {
-        history.push({ date: date.getTime(), profit: 0 });
+      eachDay(from, subDays(firstDate, 1)).forEach(date => {
+        history.push({ date: date.getTime(), value: 0 });
       });
-      adjustedFrom = addDays(firstDate, 1);
+      adjustedFrom = firstDate;
     }
 
     await new Promise(async resolve => {
@@ -88,11 +80,12 @@ class ProfitChart extends React.Component {
       const onFrame = async ts => {
         const days = Math.min(differenceInDays(to, stepFrom), 2);
         stepTo = addDays(stepFrom, days);
+        const dates = eachDay(stepFrom, stepTo);
+        const stocksPrice = await this.portfolio.stocksPriceByDates(dates);
         await Promise.all(
-          eachDay(stepFrom, stepTo).map(async date => {
-            const formattedDate = dateFormat(date, 'YYYY-MM-DD');
-            const profit = await this.portfolio.profitToDate(formattedDate);
-            history.push({ date: date.getTime(), profit });
+          dates.map(async date => {
+            const value = await this.portfolio.valueOnDate(date, stocksPrice);
+            history.push({ date: date.getTime(), value });
           })
         );
         stepFrom = addDays(stepFrom, days + 1);
@@ -110,33 +103,20 @@ class ProfitChart extends React.Component {
   };
 
   updateChart = async () => {
-    const history = await this.profitHistory(...this.defaultPeriodDates());
+    const history = await this.valueHistory(...this.defaultPeriodDates());
     if (this._unmounted) {
       return;
     }
-    const data = history.map(histDate => [histDate.date, histDate.profit]);
-
+    const data = history.map(histDate => [histDate.date, histDate.value]);
     this.setState({
       chartOptions: {
         title: {
-          text: 'Portfolio Profit'
+          text: 'Portfolio Value'
         },
         series: [
           {
-            name: 'Profit',
-            type: 'area',
-            data,
-            threshold: 0,
-            color: 'green',
-            fillColor: {
-              linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-              stops: [[0, 'rgba(176, 255, 137, 1)'], [1, 'rgba(176, 255, 137, 0)']]
-            },
-            negativeColor: 'red',
-            negativeFillColor: {
-              linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-              stops: [[0, 'rgba(255, 146, 137, 1)'], [1, 'rgba(255, 146, 137, 0)']]
-            }
+            name: 'Value',
+            data
           }
         ],
         xAxis: {
@@ -145,19 +125,12 @@ class ProfitChart extends React.Component {
           }
         },
         yAxis: {
-          plotLines: [
-            {
-              color: '#ffd1cc',
-              width: 2,
-              value: 0
-            }
-          ],
           labels: {
-            format: '{value}%'
+            format: '${value:,.0f}'
           }
         },
         tooltip: {
-          pointFormat: '{series.name}: <b>{point.y:.4f}%</b><br/>'
+          pointFormat: '{series.name}: <b>${point.y:,.2f}</b><br/>'
         },
         time: {
           useUTC: false
@@ -178,20 +151,27 @@ class ProfitChart extends React.Component {
           constructorType={'stockChart'}
           options={this.state.chartOptions}
         />
-        {this.state.profit !== undefined && (
+        {this.state.growth !== undefined ? (
           <Header
             className="center"
-            content={`Profit on period: ${this.state.profit.toFixed(4)}%`}
+            content={`Growth on period: ${this.state.growth.toFixed(4)}%`}
           />
+        ) : (
+          <Placeholder fluid>
+            <Placeholder.Line length="full" />
+          </Placeholder>
         )}
-
-        {this.state.annualizedProfit !== undefined && (
+        {this.state.annualizedGrowth !== undefined ? (
           <Header
             as="h5"
             className="center"
             style={{ marginTop: 0 }}
-            content={`Annualized profit on period: ${this.state.annualizedProfit.toFixed(4)}%`}
+            content={`Annualized growth on period: ${this.state.annualizedGrowth.toFixed(4)}%`}
           />
+        ) : (
+          <Placeholder fluid>
+            <Placeholder.Line length="full" />
+          </Placeholder>
         )}
       </>
     ) : (
@@ -200,4 +180,4 @@ class ProfitChart extends React.Component {
   }
 }
 
-export default ProfitChart;
+export default ValueChart;

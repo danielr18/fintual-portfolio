@@ -1,7 +1,7 @@
 import Portfolio from '../Portfolio';
-import StockService from '../../services/stock.service';
+import StockService from '../services/stock.service';
 
-jest.mock('../../services/stock.service', () => ({
+jest.mock('../services/stock.service', () => ({
   getInfo: jest.fn(stockId => ({
     id: stockId,
     type: 'real_asset',

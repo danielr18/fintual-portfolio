@@ -2,8 +2,8 @@ import _ from 'lodash';
 import isSameDay from 'date-fns/is_same_day';
 import isWithinRange from 'date-fns/is_within_range';
 import isBefore from 'date-fns/is_before';
-import { isSameDayOrBefore } from '../utils/date';
-import StockService from '../services/stock.service';
+import { isSameDayOrBefore } from './utils/date';
+import StockService from './services/stock.service';
 
 class Stock {
   constructor(id, { name, symbol } = {}) {

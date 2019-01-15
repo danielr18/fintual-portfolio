@@ -2,8 +2,8 @@ import { TaskQueue } from 'cwait';
 import _ from 'lodash';
 import { differenceInDays, isWithinRange, subDays, format as dateFormat, isBefore } from 'date-fns';
 import Stock from './Stock';
-import { isSameDayOrAfter, isSameDayOrBefore } from '../utils/date';
-import * as portfolioUtils from '../utils/portfolio';
+import { isSameDayOrAfter, isSameDayOrBefore } from './utils/date';
+import * as portfolioUtils from './utils/portfolio';
 
 class Portfolio {
   constructor(transactions = []) {

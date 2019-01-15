@@ -1,7 +1,7 @@
 import React from 'react';
 import _ from 'lodash';
 import { Header, Modal, Dropdown, Grid, Input, Button, Message } from 'semantic-ui-react';
-import FundsService from '../../../../services/funds.service';
+import { FundsService } from '../../../../../';
 import DatePicker from 'react-datepicker';
 import PortfolioContext from '../../../../contexts/PortfolioContext/PortfolioContext';
 import { isAfter } from 'date-fns';
@@ -163,7 +163,11 @@ class AddTransactionModal extends React.Component {
                     <p>{this.state.error}</p>
                   </Message>
                 )}
-                <Button onClick={this.onSaveTransaction} primary disabled={this.state.saving || this.isSaveDisabled()}>
+                <Button
+                  onClick={this.onSaveTransaction}
+                  primary
+                  disabled={this.state.saving || this.isSaveDisabled()}
+                >
                   Save
                 </Button>
               </Grid.Column>

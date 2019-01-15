@@ -1,1 +1,2 @@
-# fintual-portfolio
+# Stocks Portfolio Tracker - Powered by Fintual
+
