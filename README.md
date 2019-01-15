@@ -1,6 +1,6 @@
 # Stocks Portfolio Tracker - Powered by Fintual
 
-A JavaScript module to help with calculations of stocks and portfolios in an object oriented way.
+A JavaScript module to help with calculations of stocks and portfolios in an object oriented way. Stocks data is obtained from [Fintual API](https://fintual.cl/api-docs).
 
 ## Usage
 
