@@ -1,9 +1,9 @@
-import StockService from '../services/stock.service';
 import _ from 'lodash';
 import isSameDay from 'date-fns/is_same_day';
 import isWithinRange from 'date-fns/is_within_range';
 import isBefore from 'date-fns/is_before';
 import { isSameDayOrBefore } from '../utils/date';
+import StockService from '../services/stock.service';
 
 class Stock {
   constructor(id, { name, symbol } = {}) {
@@ -12,6 +12,10 @@ class Stock {
     this.symbol = symbol;
     this._history = { dates: [] };
   }
+
+  /**
+   * "Private" methods
+   */
 
   _priceByDate = async date => {
     if (isWithinRange(date, this._history.from, this._history.to)) {
@@ -26,9 +30,6 @@ class Stock {
         return dayHist[0].attributes.price;
       }
     }
-
-    // No price
-    return undefined;
   };
 
   _previousPrice = async date => {
@@ -70,6 +71,18 @@ class Stock {
     }
   };
 
+  /**
+   * Public getters
+   */
+
+  getHistory = async (from, to) => {
+    return this._history.dates.filter(day => isWithinRange(day.date, from, to));
+  };
+
+  /**
+   * Public methods
+   */
+
   fetchInfo = async () => {
     const info = await StockService.getInfo(this.id);
     const { name, symbol } = info.attributes;
@@ -95,11 +108,7 @@ class Stock {
     };
   };
 
-  history = async (from, to) => {
-    return this._history.dates.filter(day => isWithinRange(day.date, from, to));
-  };
-
-  price = async (date, { allowFirstPrice = false, firstPriceMaxDate = new Date() } = {}) => {
+  getPrice = async (date, { allowFirstPrice = false, firstPriceMaxDate = new Date() } = {}) => {
     const price = await this._priceByDate(date);
     if (price) return price;
 
@@ -110,9 +119,6 @@ class Stock {
     // Get first price if there's no price before date
     const firstPrice = allowFirstPrice && (await this._firstPrice(undefined, firstPriceMaxDate));
     if (firstPrice) return firstPrice;
-
-    // No price
-    return undefined;
   };
 }
 

@@ -89,7 +89,7 @@ describe('Portfolio Model', () => {
       ]);
       await portfolio.addTransaction(new Date(2018, 1, 2), '187', 5);
       // Verify transaction is in the right position
-      expect(portfolio.transactions[1].date).toBe('2018-02-02');
+      expect(portfolio.getTransactions()[1].date).toBe('2018-02-02');
     });
 
     it('transaction fails if selling more stocks than owned', async () => {

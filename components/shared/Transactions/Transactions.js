@@ -20,7 +20,7 @@ class Transactions extends React.Component {
   async componentDidMount() {
     if (this.portfolio.isInited()) {
       this.setState({
-        transactions: await this.processTransactions(this.portfolio.transactions)
+        transactions: await this.processTransactions(this.portfolio.getTransactions())
       });
     }
   }
@@ -29,7 +29,7 @@ class Transactions extends React.Component {
     if (this._lastPortfolioUpdate !== this.context.lastUpdate && this.portfolio.isInited()) {
       this._lastPortfolioUpdate = this.context.lastUpdate;
       this.setState({
-        transactions: await this.processTransactions(this.portfolio.transactions)
+        transactions: await this.processTransactions(this.portfolio.getTransactions())
       });
     }
   }
@@ -40,8 +40,9 @@ class Transactions extends React.Component {
         .slice(0)
         .reverse()
         .map(async t => {
-          const stock = this.portfolio.stocks[t.stockId];
-          const price = (await stock.price(t.date)) || 0;
+          const stocks = this.portfolio.getStocks();
+          const stock = stocks[t.stockId];
+          const price = (await stock.getPrice(t.date)) || 0;
           const value = t.quantity * price || 0;
           return {
             date: dateFormat(t.date, 'YYYY-MM-DD'),
@@ -123,7 +124,7 @@ class Transactions extends React.Component {
           </Table>
         ) : (
           <Placeholder fluid>
-            {_.range(0, this.portfolio.transactions.length || 5).map(i => (
+            {_.range(0, this.portfolio.getTransactions().length || 5).map(i => (
               <Placeholder.Line length="full" key={i} style={{ height: 20 }} />
             ))}
           </Placeholder>

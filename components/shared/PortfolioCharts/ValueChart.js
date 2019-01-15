@@ -99,7 +99,7 @@ class ValueChart extends React.Component {
       window.requestAnimationFrame(onFrame);
     });
 
-    return history;
+    return _.sortBy(history, ['date']);
   };
 
   updateChart = async () => {

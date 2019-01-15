@@ -106,13 +106,13 @@ class ProfitChart extends React.Component {
       window.requestAnimationFrame(onFrame);
     });
 
-    return history;
+    return _.sortBy(history, ['date']);
   };
 
   updateChart = async () => {
     const history = await this.profitHistory(...this.defaultPeriodDates());
     if (this._unmounted) {
-      return
+      return;
     }
     const data = history.map(histDate => [histDate.date, histDate.profit]);
 
@@ -167,7 +167,7 @@ class ProfitChart extends React.Component {
   };
 
   componentWillUnmount() {
-    this._unmounted = true
+    this._unmounted = true;
   }
 
   render() {

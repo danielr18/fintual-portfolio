@@ -1,28 +1,28 @@
 import _ from 'lodash';
 import { format as dateFormat, isBefore } from 'date-fns';
 
-export const getStocksValue = (date, stockQuantities, stocksPriceByDate) => {
+export const getValue = (date, holdingQuantities, stocksPriceByDate) => {
   const formattedDate = dateFormat(date, 'YYYY-MM-DD')
-  return Object.entries(stockQuantities).reduce((acc, [stockId, quantity]) => {
+  return Object.entries(holdingQuantities).reduce((acc, [stockId, quantity]) => {
     const price = stocksPriceByDate[formattedDate][stockId] || 0;
     return acc + quantity * price;
   }, 0);
 };
 
-export const getDateCashflow = (date, stockQuantities, stocksPriceByDate, previousPeriod) => {
+export const getDateCashflow = (date, holdingQuantities, stocksPriceByDate, previousPeriod) => {
   if (!previousPeriod) {
     return 0;
   }
-  return Object.keys(stockQuantities).reduce((acc, stockId) => {
-    const current = stockQuantities[stockId] || 0;
-    const previous = previousPeriod.stockQuantities[stockId] || 0;
+  return Object.keys(holdingQuantities).reduce((acc, stockId) => {
+    const current = holdingQuantities[stockId] || 0;
+    const previous = previousPeriod.holdingQuantities[stockId] || 0;
     const tradedQuantity = current - previous;
     const price = stocksPriceByDate[date] && stocksPriceByDate[date][stockId] || 0;
     return acc + tradedQuantity * price;
   }, 0);
 };
 
-export const getStockQuantities = (transactions, initial) => {
+export const getHoldingQuantities = (transactions, initial) => {
   return transactions.reduce(
     (acc, { stockId, quantity }) => {
       const previousQuantity = acc[stockId] || 0;
@@ -33,13 +33,13 @@ export const getStockQuantities = (transactions, initial) => {
   );
 };
 
-const HoldingPeriod = (date, stockQuantities, stocksPriceByDate, previousPeriod) => {
-  const value = getStocksValue(
+const HoldingPeriod = (date, holdingQuantities, stocksPriceByDate, previousPeriod) => {
+  const value = getValue(
     date,
-    previousPeriod ? previousPeriod.stockQuantities : stockQuantities,
+    previousPeriod ? previousPeriod.holdingQuantities : holdingQuantities,
     stocksPriceByDate
   );
-  const cashflow = getDateCashflow(date, stockQuantities, stocksPriceByDate, previousPeriod);
+  const cashflow = getDateCashflow(date, holdingQuantities, stocksPriceByDate, previousPeriod);
   let returnRate = 0;
   if (previousPeriod && previousPeriod.valueAfterCashflow !== 0) {
     returnRate = value / previousPeriod.valueAfterCashflow - 1;
@@ -48,7 +48,7 @@ const HoldingPeriod = (date, stockQuantities, stocksPriceByDate, previousPeriod)
     date,
     value,
     valueAfterCashflow: value + cashflow,
-    stockQuantities,
+    holdingQuantities,
     returnRate
   };
 };
@@ -59,19 +59,19 @@ export const getHoldingPeriods = (passedTransactions, stocksPriceByDate, from, t
   }
   const transactions = [...passedTransactions];
   const periods = {};
-  const initialPeriod = HoldingPeriod(dateFormat(from.date, 'YYYY-MM-DD'), from.previousStockQuantities, stocksPriceByDate);
+  const initialPeriod = HoldingPeriod(dateFormat(from.date, 'YYYY-MM-DD'), from.previousHoldingQuantities, stocksPriceByDate);
   const groupedTransactions = Object.entries(
     _.groupBy(transactions, t => dateFormat(t.date, 'YYYY-MM-DD'))
   );
   groupedTransactions.forEach(([date, dayTransactions], i) => {
     const previousDate = i > 0 && groupedTransactions[i - 1][0];
     const previousPeriod = previousDate ? periods[previousDate] : initialPeriod;
-    const dayStocksQuantities = getStockQuantities(dayTransactions, previousPeriod.stockQuantities);
-    const stockQuantities = {
-      ...(previousPeriod && previousPeriod.stockQuantities),
+    const dayStocksQuantities = getHoldingQuantities(dayTransactions, previousPeriod.holdingQuantities);
+    const holdingQuantities = {
+      ...(previousPeriod && previousPeriod.holdingQuantities),
       ...dayStocksQuantities
     };
-    periods[date] = HoldingPeriod(date, stockQuantities, stocksPriceByDate, previousPeriod);
+    periods[date] = HoldingPeriod(date, holdingQuantities, stocksPriceByDate, previousPeriod);
   });
 
   const lastIndex = groupedTransactions.length - 1;
@@ -79,7 +79,7 @@ export const getHoldingPeriods = (passedTransactions, stocksPriceByDate, from, t
   const previousPeriod = lastDate ? periods[lastDate] : initialPeriod;
   periods[to.date] = HoldingPeriod(
     dateFormat(to.date, 'YYYY-MM-DD'),
-    previousPeriod.stockQuantities,
+    previousPeriod.holdingQuantities,
     stocksPriceByDate,
     previousPeriod
   );
