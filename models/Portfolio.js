@@ -44,15 +44,17 @@ class Portfolio {
    * Public getters
    */
 
-  isInited = () => this._isInited;
+  isInited() {
+    return this._isInited;
+  }
 
-  getTransactions = () => {
+  getTransactions() {
     return this._transactions.slice();
-  };
+  }
 
-  getStocks = () => {
+  getStocks() {
     return _.clone(this._stocks);
-  };
+  }
 
   firstDate = () => {
     if (this._transactions.length > 0) {
@@ -60,21 +62,21 @@ class Portfolio {
     }
   };
 
-  lastDate = () => {
+  lastDate() {
     if (this._transactions.length > 0) {
       return this._transactions[this._transactions.length - 1].date;
     }
-  };
+  }
 
-  hasTransactions = () => {
+  hasTransactions() {
     return this._transactions.length > 0;
-  };
+  }
 
   /**
    * Public methods
    */
 
-  init = async () => {
+  async init() {
     const queue = new TaskQueue(Promise, 20); // 20 concurrent requests
     await Promise.all([
       ...Object.values(this._stocks).map(queue.wrap(stock => stock.fetchInfo())),
@@ -82,9 +84,9 @@ class Portfolio {
     ]);
     this._isInited = true;
     this.notify();
-  };
+  }
 
-  addTransaction = async (date, stockId, quantity) => {
+  async addTransaction(date, stockId, quantity) {
     const holdingQuantities = this.holdingQuantitiesOnDate(this.lastDate());
     const prevQuantity = holdingQuantities[stockId] || 0;
     if (quantity + prevQuantity < 0) {
@@ -103,9 +105,9 @@ class Portfolio {
     this._transactions = _.orderBy(this._transactions, 'date', ['asc']);
     this._memoizedStockPricesByDate.cache.clear();
     this.notify();
-  };
+  }
 
-  deleteTransaction = index => {
+  deleteTransaction(index) {
     const prevTransactions = [...this._transactions];
     const transaction = this._transactions[index];
     _.pullAt(this._transactions, [index]);
@@ -125,7 +127,7 @@ class Portfolio {
       delete this._stocks[transaction.stockId];
     }
     this.notify();
-  };
+  }
 
   subscribe(cb) {
     this._listeners.push(cb);
@@ -143,23 +145,23 @@ class Portfolio {
    * Public calculation methods -
    */
 
-  holdingQuantitiesOnDate = date => {
+  holdingQuantitiesOnDate(date) {
     const transactions = this._transactions.filter(t => isSameDayOrBefore(t.date, date));
     return portfolioUtils.getHoldingQuantities(transactions);
-  };
+  }
 
-  valueOnDate = async (date, stocksPrice) => {
+  async valueOnDate(date, stocksPrice) {
     if (!stocksPrice) {
       stocksPrice = await this.stocksPriceByDates([date]);
     }
     return portfolioUtils.getValue(date, this.holdingQuantitiesOnDate(date), stocksPrice);
   };
 
-  stocksPriceByDate = date => {
+  stocksPriceByDate(date) {
     return this._memoizedStockPricesByDate(dateFormat(date, 'YYYY-MM-DD'));
   };
 
-  stocksPriceByDates = async dates => {
+  async stocksPriceByDates (dates) {
     const stocksPrices = {};
     await Promise.all(
       dates.map(async date => {
@@ -174,7 +176,7 @@ class Portfolio {
    * Public calculation methods - growth
    */
 
-  growthOnPeriod = async (from, to) => {
+  async growthOnPeriod (from, to) {
     const initialDate = isBefore(from, this.firstDate()) ? this.firstDate() : from;
     const [initialValue, endValue] = await Promise.all([
       this.valueOnDate(initialDate),
@@ -183,13 +185,13 @@ class Portfolio {
     return initialValue !== 0 ? (endValue / initialValue - 1) * 100 : undefined;
   };
 
-  annualizedGrowthOnPeriod = async (from, to) => {
+  async annualizedGrowthOnPeriod (from, to) {
     const profit = await this.growthOnPeriod(from, to);
     const days = differenceInDays(to, from);
     return ((1 + profit / 100) ** (365 / days) - 1) * 100;
   };
 
-  growthToDate = async date => {
+  growthToDate (date) {
     const firstDate = this.firstDate(date);
     const from = firstDate || date;
     if (isBefore(date, from)) {
@@ -198,7 +200,7 @@ class Portfolio {
     return this.growthOnPeriod(from, date);
   };
 
-  annualizedGrowthToDate = async date => {
+  async annualizedGrowthToDate (date) {
     const from = this.firstDate(date) || date;
     const profit = await this.growthToDate(date);
     const days = differenceInDays(date, from);
@@ -209,7 +211,7 @@ class Portfolio {
    * Public calculation methods - profit
    */
 
-  profitOnPeriod = async (from, to) => {
+  async profitOnPeriod (from, to) {
     let transactionsInRange = [];
     if (!isSameDayOrAfter(from, to)) {
       transactionsInRange = this._transactions.filter(
@@ -236,23 +238,23 @@ class Portfolio {
     return returnRate * 100;
   };
 
-  profitToDate = async date => {
+  async profitToDate (date) {
     const firstDate = this.firstDate(date);
     const from = firstDate || date;
     if (isBefore(date, from)) {
       return 0;
     }
-    const profit = this.profitOnPeriod(from, date);
+    const profit = await this.profitOnPeriod(from, date);
     return profit;
   };
 
-  annualizedProfitOnPeriod = async (from, to) => {
+  async annualizedProfitOnPeriod (from, to) {
     const profit = await this.profitOnPeriod(from, to);
     const days = differenceInDays(to, from);
     return ((1 + profit / 100) ** (365 / days) - 1) * 100;
   };
 
-  annualizedProfitToDate = async date => {
+  async annualizedProfitToDate (date) {
     const firstDate = this.firstDate(date);
     const from = firstDate || date;
     const profit = await this.profitToDate(date);

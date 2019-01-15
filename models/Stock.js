@@ -17,7 +17,7 @@ class Stock {
    * "Private" methods
    */
 
-  _priceByDate = async date => {
+  async _priceByDate(date) {
     if (isWithinRange(date, this._history.from, this._history.to)) {
       // Get price from cached history
       const histObj = this._history.dates.find(day => isSameDay(day.date, date));
@@ -30,9 +30,9 @@ class Stock {
         return dayHist[0].attributes.price;
       }
     }
-  };
+  }
 
-  _previousPrice = async date => {
+  async _previousPrice(date) {
     if (isWithinRange(date, this._history.from, this._history.to)) {
       // Get hist range from cached history
       const filteredHistDates = this._history.dates.filter(day => isBefore(day.date, date));
@@ -47,9 +47,9 @@ class Stock {
         return sortedHist[0].attributes.price;
       }
     }
-  };
+  }
 
-  _firstPrice = async (from = new Date(0), to = new Date()) => {
+  async _firstPrice(from = new Date(0), to = new Date()) {
     const isHistoryCached =
       isSameDayOrBefore(this._history.from, from) && isSameDayOrBefore(to, this._history.to);
 
@@ -69,28 +69,28 @@ class Stock {
         return sortedHist[0].attributes.price;
       }
     }
-  };
+  }
 
   /**
    * Public getters
    */
 
-  getHistory = async (from, to) => {
+  async getHistory(from, to) {
     return this._history.dates.filter(day => isWithinRange(day.date, from, to));
-  };
+  }
 
   /**
    * Public methods
    */
 
-  fetchInfo = async () => {
+  async fetchInfo() {
     const info = await StockService.getInfo(this.id);
     const { name, symbol } = info.attributes;
     this.name = name;
     this.symbol = symbol;
-  };
+  }
 
-  fetchHistory = async (from, to) => {
+  async fetchHistory(from, to) {
     const history = await StockService.getHistory(this.id, {
       from_date: from,
       to_date: to
@@ -106,9 +106,9 @@ class Stock {
       to: to || new Date(),
       dates: dates
     };
-  };
+  }
 
-  getPrice = async (date, { allowFirstPrice = false, firstPriceMaxDate = new Date() } = {}) => {
+  async getPrice(date, { allowFirstPrice = false, firstPriceMaxDate = new Date() } = {}) {
     const price = await this._priceByDate(date);
     if (price) return price;
 
@@ -119,7 +119,7 @@ class Stock {
     // Get first price if there's no price before date
     const firstPrice = allowFirstPrice && (await this._firstPrice(undefined, firstPriceMaxDate));
     if (firstPrice) return firstPrice;
-  };
+  }
 }
 
 export default Stock;
