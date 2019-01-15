@@ -155,13 +155,13 @@ class Portfolio {
       stocksPrice = await this.stocksPriceByDates([date]);
     }
     return portfolioUtils.getValue(date, this.holdingQuantitiesOnDate(date), stocksPrice);
-  };
+  }
 
   stocksPriceByDate(date) {
     return this._memoizedStockPricesByDate(dateFormat(date, 'YYYY-MM-DD'));
-  };
+  }
 
-  async stocksPriceByDates (dates) {
+  async stocksPriceByDates(dates) {
     const stocksPrices = {};
     await Promise.all(
       dates.map(async date => {
@@ -170,48 +170,48 @@ class Portfolio {
       })
     );
     return stocksPrices;
-  };
+  }
 
   /**
    * Public calculation methods - growth
    */
 
-  async growthOnPeriod (from, to) {
+  async growthOnPeriod(from, to) {
     const initialDate = isBefore(from, this.firstDate()) ? this.firstDate() : from;
     const [initialValue, endValue] = await Promise.all([
       this.valueOnDate(initialDate),
       this.valueOnDate(to)
     ]);
     return initialValue !== 0 ? (endValue / initialValue - 1) * 100 : undefined;
-  };
+  }
 
-  async annualizedGrowthOnPeriod (from, to) {
+  async annualizedGrowthOnPeriod(from, to) {
     const profit = await this.growthOnPeriod(from, to);
     const days = differenceInDays(to, from);
     return ((1 + profit / 100) ** (365 / days) - 1) * 100;
-  };
+  }
 
-  growthToDate (date) {
+  growthToDate(date) {
     const firstDate = this.firstDate(date);
     const from = firstDate || date;
     if (isBefore(date, from)) {
       return 0;
     }
     return this.growthOnPeriod(from, date);
-  };
+  }
 
-  async annualizedGrowthToDate (date) {
+  async annualizedGrowthToDate(date) {
     const from = this.firstDate(date) || date;
     const profit = await this.growthToDate(date);
     const days = differenceInDays(date, from);
     return ((1 + profit / 100) ** (365 / days) - 1) * 100;
-  };
+  }
 
   /**
    * Public calculation methods - profit
    */
 
-  async profitOnPeriod (from, to) {
+  async profitOnPeriod(from, to) {
     let transactionsInRange = [];
     if (!isSameDayOrAfter(from, to)) {
       transactionsInRange = this._transactions.filter(
@@ -236,31 +236,30 @@ class Portfolio {
       }
     );
     return returnRate * 100;
-  };
+  }
 
-  async profitToDate (date) {
+  profitToDate(date) {
     const firstDate = this.firstDate(date);
     const from = firstDate || date;
     if (isBefore(date, from)) {
       return 0;
     }
-    const profit = await this.profitOnPeriod(from, date);
-    return profit;
-  };
+    return this.profitOnPeriod(from, date);
+  }
 
-  async annualizedProfitOnPeriod (from, to) {
+  async annualizedProfitOnPeriod(from, to) {
     const profit = await this.profitOnPeriod(from, to);
     const days = differenceInDays(to, from);
     return ((1 + profit / 100) ** (365 / days) - 1) * 100;
-  };
+  }
 
-  async annualizedProfitToDate (date) {
+  async annualizedProfitToDate(date) {
     const firstDate = this.firstDate(date);
     const from = firstDate || date;
     const profit = await this.profitToDate(date);
     const days = differenceInDays(date, from);
     return ((1 + profit / 100) ** (365 / days) - 1) * 100;
-  };
+  }
 }
 
 export default Portfolio;
