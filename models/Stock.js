@@ -88,14 +88,8 @@ class Stock {
       return { date, price };
     });
 
-    const sortedDates = _.orderBy(dates, 'date', ['asc']);
-    let fromDate = from;
-    if (!from || (sortedDates[0] && isBefore(from, sortedDates[0].date))) {
-      fromDate = new Date(0);
-    }
-
     this._history = {
-      from: fromDate,
+      from: from || new Date(0),
       to: to || new Date(),
       dates: dates
     };

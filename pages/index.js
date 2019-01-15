@@ -1,27 +1,45 @@
 import React from 'react';
-import 'semantic-ui-css/semantic.min.css';
-import Highcharts from 'highcharts/highstock';
-import HighchartsReact from 'highcharts-react-official';
-import Portfolio from '../models/Portfolio';
+import { Button, Header, Icon, Segment, Container } from 'semantic-ui-react';
+import PortfolioContext from '../contexts/PortfolioContext/PortfolioContext';
+import LayoutHeader from '../components/shared/Header';
+import Footer from '../components/shared/Footer';
+import AddTransactionModal from '../components/shared/Modals/AddTransaction';
+import PortfolioCharts from '../components/shared/PortfolioCharts';
+import Transactions from '../components/shared/Transactions';
+import '../styles/pages/index.scss';
 
 export default class Index extends React.Component {
-  constructor(props) {
-    super(props);
-    this.options = {};
+  static contextType = PortfolioContext;
+
+  constructor(props, context) {
+    super(props, context);
+    this.portfolio = context.portfolio;
   }
 
   componentDidMount() {
-    // init the module
+    window.portfolio = this.portfolio
   }
 
   render() {
+    const hasTransactions = this.portfolio.hasTransactions();
     return (
       <div>
-        <HighchartsReact
-          highcharts={Highcharts}
-          constructorType={'stockChart'}
-          options={this.options}
-        />
+        <LayoutHeader className="mb4 mt2" />
+        <Container className="grow">
+          {!hasTransactions ? (
+            <Segment placeholder>
+              <Header icon>
+                <Icon name="dollar sign" />
+                Begin building your portfolio
+              </Header>
+              <AddTransactionModal trigger={<Button primary>Add a Transaction</Button>} />
+            </Segment>
+          ) : (
+            <PortfolioCharts />
+          )}
+          <Transactions className="mt3" />
+        </Container>
+        <Footer className="mt4 mb4" />
       </div>
     );
   }

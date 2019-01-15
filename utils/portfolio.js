@@ -2,8 +2,9 @@ import _ from 'lodash';
 import { format as dateFormat, isBefore } from 'date-fns';
 
 export const getStocksValue = (date, stockQuantities, stocksPriceByDate) => {
+  const formattedDate = dateFormat(date, 'YYYY-MM-DD')
   return Object.entries(stockQuantities).reduce((acc, [stockId, quantity]) => {
-    const price = stocksPriceByDate[stockId][date] || 0;
+    const price = stocksPriceByDate[formattedDate][stockId] || 0;
     return acc + quantity * price;
   }, 0);
 };
@@ -16,7 +17,7 @@ export const getDateCashflow = (date, stockQuantities, stocksPriceByDate, previo
     const current = stockQuantities[stockId] || 0;
     const previous = previousPeriod.stockQuantities[stockId] || 0;
     const tradedQuantity = current - previous;
-    const price = stocksPriceByDate[stockId][date] || 0;
+    const price = stocksPriceByDate[date] && stocksPriceByDate[date][stockId] || 0;
     return acc + tradedQuantity * price;
   }, 0);
 };
@@ -58,7 +59,7 @@ export const getHoldingPeriods = (passedTransactions, stocksPriceByDate, from, t
   }
   const transactions = [...passedTransactions];
   const periods = {};
-  const initialPeriod = HoldingPeriod(from.date, from.previousStockQuantities, stocksPriceByDate);
+  const initialPeriod = HoldingPeriod(dateFormat(from.date, 'YYYY-MM-DD'), from.previousStockQuantities, stocksPriceByDate);
   const groupedTransactions = Object.entries(
     _.groupBy(transactions, t => dateFormat(t.date, 'YYYY-MM-DD'))
   );
@@ -77,7 +78,7 @@ export const getHoldingPeriods = (passedTransactions, stocksPriceByDate, from, t
   const lastDate = lastIndex >= 0 && groupedTransactions[lastIndex][0];
   const previousPeriod = lastDate ? periods[lastDate] : initialPeriod;
   periods[to.date] = HoldingPeriod(
-    to.date,
+    dateFormat(to.date, 'YYYY-MM-DD'),
     previousPeriod.stockQuantities,
     stocksPriceByDate,
     previousPeriod

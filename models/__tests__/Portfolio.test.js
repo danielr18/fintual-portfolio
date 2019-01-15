@@ -30,19 +30,115 @@ const mockHistory = mockedHistory => {
 };
 
 describe('Portfolio Model', () => {
-  // describe('events', () => {
-  //   it('can subscribe to change events', async () => {
-  //     // Exercise SUT
-  //     const portfolio = new Portfolio();
-  //     const mock = jest.fn()
-  //     await portfolio.subscribe(mock);
-  //     // Verify profit is calculated correctly
-  //     const profit = await portfolio.addTransaction('2018-12-31', '187', 5);
-  //     expect(profit).toBe(0);
-  //   });
-  // });
+  describe('events', () => {
+    it('can subscribe to change events', async () => {
+      // Fixture setup
+      mockHistory({
+        187: fakeHistory(['2018-01-01', 100], ['2018-12-31', 150])
+      });
+      // Exercise SUT
+      const portfolio = new Portfolio();
+      const mock = jest.fn();
+      await portfolio.subscribe(mock);
+      // Verify profit is calculated correctly
+      await portfolio.addTransaction('2018-12-31', '187', 5);
+      expect(mock).toHaveBeenCalled();
+    });
 
-  describe('edge cases', () => {
+    it('can unsubscribe', async () => {
+      // Fixture setup
+      mockHistory({
+        187: fakeHistory(['2018-01-01', 100], ['2018-12-31', 150])
+      });
+      // Exercise SUT
+      const portfolio = new Portfolio();
+      const mock = jest.fn();
+      portfolio.subscribe(mock);
+      // Verify profit is calculated correctly
+      await portfolio.addTransaction('2018-11-31', '187', 5);
+      portfolio.unsubscribe(mock);
+      await portfolio.addTransaction('2018-12-31', '187', 5);
+      expect(mock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('change transactions', () => {
+    it('can add transaction', async () => {
+      const portfolio = new Portfolio();
+      // Verify there are no transactions
+      expect(portfolio.hasTransactions()).toBe(false);
+      await portfolio.addTransaction('2018-11-31', '187', 5);
+      // Verify profit is calculated correctly
+      expect(portfolio.hasTransactions()).toBe(true);
+    });
+
+    it('can delete transaction', async () => {
+      const portfolio = new Portfolio([{ date: '2018-01-01', stockId: '187', quantity: 5 }]);
+      // Verify there are no transactions
+      expect(portfolio.hasTransactions()).toBe(true);
+      portfolio.deleteTransaction(0);
+      // Verify profit is calculated correctly
+      expect(portfolio.hasTransactions()).toBe(false);
+    });
+
+    it('transactions remain ordered after insertion', async () => {
+      const portfolio = new Portfolio([
+        { date: '2018-01-01', stockId: '187', quantity: 5 },
+        { date: '2018-07-01', stockId: '187', quantity: 20 },
+        { date: '2018-12-01', stockId: '187', quantity: -10 }
+      ]);
+      await portfolio.addTransaction(new Date(2018, 1, 2), '187', 5);
+      // Verify transaction is in the right position
+      expect(portfolio.transactions[1].date).toBe('2018-02-02');
+    });
+
+    it('transaction fails if selling more stocks than owned', async () => {
+      const portfolio = new Portfolio([{ date: '2018-01-01', stockId: '187', quantity: 5 }]);
+      // Verify transaction fails
+      await expect(portfolio.addTransaction('2018-02-02', '187', -6)).rejects.toThrow();
+    });
+
+    it('transaction fails if selling non owned stock', async () => {
+      const portfolio = new Portfolio();
+      // Verify transaction fails
+      await expect(portfolio.addTransaction('2018-02-02', '187', -6)).rejects.toThrow();
+    });
+
+    it('transaction fails if it would result in negative stocks owned', async () => {
+      // Fixture setup
+      mockHistory({
+        187: fakeHistory(['2018-01-01', 100], ['2018-07-01', 125])
+      });
+      // Exercise SUT
+      const portfolio = new Portfolio();
+      // Verify profit is calculated correctly
+      await portfolio.addTransaction('2017-01-01', '187', 5);
+      await portfolio.addTransaction('2017-01-05', '187', -5);
+      // Verify transaction fails
+      expect(() => {
+        portfolio.deleteTransaction(0);
+      }).toThrow();
+    });
+
+    it('transaction fails if it would result in a first stock transaction of sell type', async () => {
+      // Fixture setup
+      mockHistory({
+        187: fakeHistory(['2018-01-01', 100], ['2018-07-01', 125])
+      });
+      // Exercise SUT
+      const portfolio = new Portfolio();
+      // Verify profit is calculated correctly
+      await portfolio.addTransaction('2017-01-01', '187', 5);
+      await portfolio.addTransaction('2017-01-05', '187', -5);
+      await portfolio.addTransaction('2017-01-05', '187', 5);
+      // Verify transaction fails
+      expect(() => {
+        portfolio.deleteTransaction(0);
+      }).toThrow();
+    });
+  });
+
+  describe('profit edge cases', () => {
     it('profit is 0 if no transactions / inital state', async () => {
       // Exercise SUT
       const portfolio = new Portfolio();
@@ -79,19 +175,6 @@ describe('Portfolio Model', () => {
       // Verify profit is calculated correctly
       const profit = await portfolio.profitToDate('2018-12-31');
       expect(profit).toBe(50);
-    });
-
-    it('profit to date 2', async () => {
-      // Fixture setup
-      mockHistory({
-        187: fakeHistory(['2018-01-01', 100], ['2018-06-01', 200], ['2018-12-31', 150])
-      });
-      // Exercise SUT
-      const portfolio = new Portfolio([{ date: '2018-01-01', stockId: '187', quantity: 100 }]);
-      await portfolio.init();
-      // Verify profit is calculated correctly
-      const profit = await portfolio.profitToDate('2018-06-01');
-      expect(profit).toBe(100);
     });
 
     it('annualized profit to date', async () => {
@@ -271,7 +354,7 @@ describe('Portfolio Model', () => {
       });
     });
 
-    it('profit to date cuper', async () => {
+    it('profit to date', async () => {
       // Exercise SUT
       const portfolio = new Portfolio([
         { date: '2018-01-01', stockId: '187', quantity: 5 },
