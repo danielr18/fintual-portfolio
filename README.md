@@ -16,6 +16,7 @@ A JavaScript module to help with calculations of stocks and portfolios in an obj
   // Add more transactions
   await portfolio.addTransaction('2018-12-01', '187', 15);
   // Calculate the profit
+  const profit = await portfolio.profitOnPeriod('2018-08-01', '2018-12-01');
   const annualizedProfit = await portfolio.annualizedProfitOnPeriod('2018-08-01', '2018-12-01');
   console.log(profit, annualizedProfit);
 })();
