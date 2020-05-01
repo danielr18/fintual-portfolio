@@ -6,13 +6,16 @@
     "build": "npm run clean && babel src --out-dir lib --ignore \"src/**/*.test.js\"",
     "clean": "rimraf lib",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "snyk-protect": "snyk protect",
+    "prepare": "yarn run snyk-protect"
   },
   "dependencies": {
     "axios": "^0.18.0",
     "cwait": "^1.1.2",
     "date-fns": "^1.30.1",
-    "lodash": "^4.17.11"
+    "lodash": "^4.17.11",
+    "snyk": "^1.316.1"
   },
   "peerDependencies": {
     "@babel/runtime": "^7.0.0"
@@ -30,5 +33,6 @@
     "regenerator-runtime": "^0.13.1",
     "rimraf": "^2.6.3"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "snyk": true
 }
