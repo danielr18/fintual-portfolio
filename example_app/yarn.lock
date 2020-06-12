@@ -2952,9 +2952,10 @@ highcharts-react-official@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/highcharts-react-official/-/highcharts-react-official-2.0.0.tgz#3e4a8a2cd9a894a55f72ff7967b6573e47ec30c1"
 
-highcharts@^7.0.1:
-  version "7.0.1"
-  resolved "https://registry.yarnpkg.com/highcharts/-/highcharts-7.0.1.tgz#0c6ad096559aca723bc95276bce02b9790c444e8"
+highcharts@^8.1.1:
+  version "8.1.1"
+  resolved "https://registry.yarnpkg.com/highcharts/-/highcharts-8.1.1.tgz#7dc011e260289ab64d775807df0d13b85ed88338"
+  integrity sha512-DSkI+fAqkqYDslOVLcEk8DX7W9itRIwzsdS0uVEOnVf0LF1hSKZtDINHP7ze/uBN9NdWQV9HydtiPTrkLx0lXg==
 
 hmac-drbg@^1.0.0:
   version "1.0.1"
