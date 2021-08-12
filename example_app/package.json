@@ -21,7 +21,7 @@
     "highcharts-react-official": "^2.0.0",
     "jest": "^23.6.0",
     "lodash": "^4.17.11",
-    "next": "^7.0.2",
+    "next": "^11.1.0",
     "node-sass": "^4.11.0",
     "react": "^16.7.0",
     "react-datepicker": "^2.0.0",
